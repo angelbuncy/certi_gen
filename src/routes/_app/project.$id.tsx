@@ -10,7 +10,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
 import JSZip from "jszip";
-import { Plus, Trash2, Upload, Download, Mail, ArrowLeft, Save } from "lucide-react";
+import { Plus, Trash2, Upload, Download, Mail, ArrowLeft, Save, Image as ImageIcon, Type } from "lucide-react";
+
+const fileToDataUrl = (file: File) => new Promise<string>((res, rej) => {
+  const r = new FileReader(); r.onload = () => res(String(r.result)); r.onerror = rej; r.readAsDataURL(file);
+});
 
 export const Route = createFileRoute("/_app/project/$id")({
   component: ProjectEditor,
