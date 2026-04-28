@@ -96,12 +96,35 @@ function ProjectEditor() {
   const addField = (key?: string) => {
     const k = key ?? columns[0] ?? "Name";
     const f: FieldDef = {
-      id: crypto.randomUUID(), key: k,
+      id: crypto.randomUUID(), type: "text", key: k,
       x: 0.15, y: 0.55, width: 0.7, height: 0.08,
       fontSize: 64, fontFamily: "'Saira Stencil One', sans-serif",
       color: "#1a1a1a", bold: false, align: "center",
     };
     setFields((p) => [...p, f]); setSelectedField(f.id);
+  };
+
+  const addImageField = async (file: File) => {
+    try {
+      const dataUrl = await fileToDataUrl(file);
+      const f: FieldDef = {
+        id: crypto.randomUUID(), type: "image", key: file.name,
+        x: 0.05, y: 0.05, width: 0.18, height: 0.12,
+        fontSize: 0, fontFamily: "Inter, sans-serif",
+        color: "#000000", bold: false, align: "center",
+        imageDataUrl: dataUrl, fit: "contain",
+      };
+      setFields((p) => [...p, f]); setSelectedField(f.id);
+      toast.success("Image added");
+    } catch { toast.error("Could not read image"); }
+  };
+
+  const handleTemplateUpload = async (file: File) => {
+    try {
+      const dataUrl = await fileToDataUrl(file);
+      setCustomTemplate(dataUrl);
+      toast.success("Custom template loaded");
+    } catch { toast.error("Could not read template"); }
   };
 
   const updateField = (id: string, patch: Partial<FieldDef>) =>
