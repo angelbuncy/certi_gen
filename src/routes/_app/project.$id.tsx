@@ -50,8 +50,11 @@ function ProjectEditor() {
       setName(data.name);
       setTemplateId(data.template_id);
       setFields((data.fields as FieldDef[] | null) ?? []);
-      const last = data.last_data as { rows: Record<string, string>[]; columns: string[]; emailColumn?: string } | null;
-      if (last) { setRows(last.rows ?? []); setColumns(last.columns ?? []); setEmailColumn(last.emailColumn ?? ""); }
+      const last = data.last_data as { rows: Record<string, string>[]; columns: string[]; emailColumn?: string; customTemplate?: string | null } | null;
+      if (last) {
+        setRows(last.rows ?? []); setColumns(last.columns ?? []); setEmailColumn(last.emailColumn ?? "");
+        if (last.customTemplate) setCustomTemplate(last.customTemplate);
+      }
       setLoading(false);
     })();
   }, [id, navigate]);
@@ -61,7 +64,7 @@ function ProjectEditor() {
     const { error } = await supabase.from("projects").update({
       name, template_id: templateId,
       fields: fields as unknown as never,
-      last_data: (rows.length ? { rows, columns, emailColumn } : null) as unknown as never,
+      last_data: { rows, columns, emailColumn, customTemplate } as unknown as never,
     }).eq("id", id);
     setSaving(false);
     if (error) toast.error(error.message); else toast.success("Saved");
