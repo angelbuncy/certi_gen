@@ -1,0 +1,11 @@
+{
+  "buildCommand": "npm run build",
+  "framework": "vite",
+  "outputDirectory": "dist",
+  "env": [
+    "SUPABASE_URL",
+    "SUPABASE_PUBLISHABLE_KEY",
+    "LOVABLE_API_KEY",
+    "RESEND_API_KEY"
+  ]
+}
