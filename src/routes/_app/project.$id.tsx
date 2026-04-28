@@ -256,10 +256,23 @@ function ProjectEditor() {
         <aside className="col-span-3 space-y-6">
           <div className="border border-border bg-card p-4">
             <div className="text-[10px] tracking-[0.3em] text-gold mb-3">TEMPLATE</div>
-            <Select value={templateId} onValueChange={setTemplateId}>
-              <SelectTrigger className="bg-input border-border"><SelectValue /></SelectTrigger>
+            <Select value={templateId} onValueChange={(v) => { setTemplateId(v); setCustomTemplate(null); }}>
+              <SelectTrigger className="bg-input border-border" disabled={!!customTemplate}><SelectValue /></SelectTrigger>
               <SelectContent>{TEMPLATES.map((t) => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}</SelectContent>
             </Select>
+            <label className="block mt-3">
+              <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && handleTemplateUpload(e.target.files[0])} />
+              <div className="border border-dashed border-border p-3 text-center cursor-pointer hover:border-gold transition-colors">
+                <Upload className="h-4 w-4 mx-auto mb-1 text-muted-foreground" />
+                <div className="text-[10px] tracking-widest text-muted-foreground">UPLOAD CUSTOM TEMPLATE</div>
+              </div>
+            </label>
+            {customTemplate && (
+              <div className="mt-2 flex items-center justify-between text-[10px] tracking-widest text-gold">
+                <span>CUSTOM IMAGE ACTIVE</span>
+                <button onClick={() => setCustomTemplate(null)} className="underline hover:text-foreground">CLEAR</button>
+              </div>
+            )}
           </div>
 
           <div className="border border-border bg-card p-4">
