@@ -308,16 +308,26 @@ function ProjectEditor() {
           <div className="border border-border bg-card p-4">
             <div className="flex items-center justify-between mb-3">
               <div className="text-[10px] tracking-[0.3em] text-gold">FIELDS</div>
-              <Button onClick={() => addField()} size="sm" variant="ghost" className="h-7 px-2"><Plus className="h-3.5 w-3.5" /></Button>
+              <div className="flex items-center gap-1">
+                <Button onClick={() => addField()} size="sm" variant="ghost" className="h-7 px-2" title="Add text field"><Type className="h-3.5 w-3.5" /></Button>
+                <label title="Add image / logo">
+                  <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && addImageField(e.target.files[0])} />
+                  <span className="inline-flex h-7 px-2 items-center justify-center rounded-md hover:bg-secondary cursor-pointer"><ImageIcon className="h-3.5 w-3.5" /></span>
+                </label>
+                <Button onClick={() => addField()} size="sm" variant="ghost" className="h-7 px-2" title="Add field"><Plus className="h-3.5 w-3.5" /></Button>
+              </div>
             </div>
             {fields.length === 0 ? (
-              <div className="text-xs text-muted-foreground">No fields yet. Upload data, then add fields.</div>
+              <div className="text-xs text-muted-foreground">No fields yet. Add text from data, or upload an image / logo.</div>
             ) : (
               <div className="space-y-1">
                 {fields.map((f) => (
                   <div key={f.id} onClick={() => setSelectedField(f.id)}
                     className={`flex items-center justify-between px-2 py-1.5 cursor-pointer text-xs tracking-widest border ${selectedField === f.id ? "border-gold bg-secondary" : "border-transparent hover:border-border"}`}>
-                    <span>{f.key}</span>
+                    <span className="flex items-center gap-1.5 truncate">
+                      {f.type === "image" ? <ImageIcon className="h-3 w-3 text-gold" /> : <Type className="h-3 w-3 text-muted-foreground" />}
+                      <span className="truncate">{f.key}</span>
+                    </span>
                     <button onClick={(e) => { e.stopPropagation(); removeField(f.id); }}><Trash2 className="h-3 w-3 text-muted-foreground hover:text-destructive" /></button>
                   </div>
                 ))}
@@ -331,7 +341,7 @@ function ProjectEditor() {
           <div ref={stageRef} onClick={() => setSelectedField(null)}
             className="relative bg-white border border-border shadow-2xl select-none"
             style={{ aspectRatio: `${CANVAS_W} / ${CANVAS_H}` }}>
-            <img src={templateToDataUrl(template.svg)} alt="" className="absolute inset-0 w-full h-full pointer-events-none" />
+            <img src={previewBg} alt="" className="absolute inset-0 w-full h-full pointer-events-none object-fill" />
             {fields.map((f) => {
               const text = currentRow[f.key] ?? `{${f.key}}`;
               const isSel = f.id === selectedField;
