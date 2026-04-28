@@ -13,7 +13,9 @@ import { Route as SignupRouteImport } from './routes/signup'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiSendCertificatesRouteImport } from './routes/api/send-certificates'
 import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
+import { Route as AppProjectIdRouteImport } from './routes/_app/project.$id'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -34,9 +36,19 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiSendCertificatesRoute = ApiSendCertificatesRouteImport.update({
+  id: '/api/send-certificates',
+  path: '/api/send-certificates',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppDashboardRoute = AppDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppProjectIdRoute = AppProjectIdRouteImport.update({
+  id: '/project/$id',
+  path: '/project/$id',
   getParentRoute: () => AppRoute,
 } as any)
 
@@ -45,12 +57,16 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/dashboard': typeof AppDashboardRoute
+  '/api/send-certificates': typeof ApiSendCertificatesRoute
+  '/project/$id': typeof AppProjectIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/dashboard': typeof AppDashboardRoute
+  '/api/send-certificates': typeof ApiSendCertificatesRoute
+  '/project/$id': typeof AppProjectIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -59,13 +75,35 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/_app/dashboard': typeof AppDashboardRoute
+  '/api/send-certificates': typeof ApiSendCertificatesRoute
+  '/_app/project/$id': typeof AppProjectIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/signup' | '/dashboard'
+  fullPaths:
+    | '/'
+    | '/login'
+    | '/signup'
+    | '/dashboard'
+    | '/api/send-certificates'
+    | '/project/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/signup' | '/dashboard'
-  id: '__root__' | '/' | '/_app' | '/login' | '/signup' | '/_app/dashboard'
+  to:
+    | '/'
+    | '/login'
+    | '/signup'
+    | '/dashboard'
+    | '/api/send-certificates'
+    | '/project/$id'
+  id:
+    | '__root__'
+    | '/'
+    | '/_app'
+    | '/login'
+    | '/signup'
+    | '/_app/dashboard'
+    | '/api/send-certificates'
+    | '/_app/project/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -73,6 +111,7 @@ export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   LoginRoute: typeof LoginRoute
   SignupRoute: typeof SignupRoute
+  ApiSendCertificatesRoute: typeof ApiSendCertificatesRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -105,6 +144,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/send-certificates': {
+      id: '/api/send-certificates'
+      path: '/api/send-certificates'
+      fullPath: '/api/send-certificates'
+      preLoaderRoute: typeof ApiSendCertificatesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_app/dashboard': {
       id: '/_app/dashboard'
       path: '/dashboard'
@@ -112,15 +158,24 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppDashboardRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/project/$id': {
+      id: '/_app/project/$id'
+      path: '/project/$id'
+      fullPath: '/project/$id'
+      preLoaderRoute: typeof AppProjectIdRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
 interface AppRouteChildren {
   AppDashboardRoute: typeof AppDashboardRoute
+  AppProjectIdRoute: typeof AppProjectIdRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
   AppDashboardRoute: AppDashboardRoute,
+  AppProjectIdRoute: AppProjectIdRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
@@ -130,6 +185,7 @@ const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   LoginRoute: LoginRoute,
   SignupRoute: SignupRoute,
+  ApiSendCertificatesRoute: ApiSendCertificatesRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

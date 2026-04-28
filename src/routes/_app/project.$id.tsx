@@ -52,8 +52,9 @@ function ProjectEditor() {
   const save = async () => {
     setSaving(true);
     const { error } = await supabase.from("projects").update({
-      name, template_id: templateId, fields,
-      last_data: rows.length ? { rows, columns, emailColumn } : null,
+      name, template_id: templateId,
+      fields: fields as unknown as never,
+      last_data: (rows.length ? { rows, columns, emailColumn } : null) as unknown as never,
     }).eq("id", id);
     setSaving(false);
     if (error) toast.error(error.message); else toast.success("Saved");
