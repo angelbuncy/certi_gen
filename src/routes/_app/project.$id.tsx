@@ -387,6 +387,42 @@ function ProjectEditor() {
             <div className="text-[10px] tracking-[0.3em] text-gold mb-4">PROPERTIES</div>
             {!selected ? (
               <p className="text-xs text-muted-foreground">Select a field to edit its style.</p>
+            ) : selected.type === "image" ? (
+              <div className="space-y-4">
+                <div className="text-[10px] tracking-[0.3em] text-gold">IMAGE / LOGO</div>
+                {selected.imageDataUrl && (
+                  <div className="border border-border bg-secondary/30 p-2 grid place-items-center">
+                    <img src={selected.imageDataUrl} alt="" className="max-h-24 object-contain" />
+                  </div>
+                )}
+                <label className="block">
+                  <input type="file" accept="image/*" className="hidden"
+                    onChange={async (e) => {
+                      const f = e.target.files?.[0]; if (!f) return;
+                      const url = await fileToDataUrl(f);
+                      updateField(selected.id, { imageDataUrl: url, key: f.name });
+                    }} />
+                  <div className="border border-dashed border-border p-3 text-center cursor-pointer hover:border-gold text-[10px] tracking-widest text-muted-foreground">
+                    REPLACE IMAGE
+                  </div>
+                </label>
+                <div>
+                  <Label className="text-[10px] tracking-widest text-muted-foreground">FIT</Label>
+                  <div className="grid grid-cols-2 gap-1 mt-1">
+                    {(["contain", "cover"] as const).map((m) => (
+                      <button key={m} onClick={() => updateField(selected.id, { fit: m })}
+                        className={`text-xs tracking-widest py-2 border ${(selected.fit ?? "contain") === m ? "border-primary bg-primary text-primary-foreground" : "border-border"}`}>
+                        {m.toUpperCase()}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="hairline" />
+                <div className="text-[10px] text-muted-foreground tracking-widest">
+                  X {(selected.x * 100).toFixed(1)}% · Y {(selected.y * 100).toFixed(1)}%<br />
+                  W {(selected.width * 100).toFixed(1)}% · H {(selected.height * 100).toFixed(1)}%
+                </div>
+              </div>
             ) : (
               <div className="space-y-4">
                 <div>
