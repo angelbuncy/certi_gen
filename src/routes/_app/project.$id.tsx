@@ -343,8 +343,8 @@ function ProjectEditor() {
             style={{ aspectRatio: `${CANVAS_W} / ${CANVAS_H}` }}>
             <img src={previewBg} alt="" className="absolute inset-0 w-full h-full pointer-events-none object-fill" />
             {fields.map((f) => {
-              const text = currentRow[f.key] ?? `{${f.key}}`;
               const isSel = f.id === selectedField;
+              const isImage = f.type === "image";
               return (
                 <div key={f.id}
                   onPointerDown={(e) => { setSelectedField(f.id); startDrag(e, f.id, "move"); }}
@@ -355,10 +355,19 @@ function ProjectEditor() {
                     display: "flex", alignItems: "center",
                     justifyContent: f.align === "center" ? "center" : f.align === "right" ? "flex-end" : "flex-start",
                   }}>
-                  <span style={{
-                    fontFamily: f.fontFamily, color: f.color, fontWeight: f.bold ? 700 : 400,
-                    fontSize: `calc(${f.fontSize / CANVAS_H} * 100cqh)`, whiteSpace: "nowrap", lineHeight: 1,
-                  }}>{text}</span>
+                  {isImage ? (
+                    f.imageDataUrl ? (
+                      <img src={f.imageDataUrl} alt="" draggable={false}
+                        style={{ width: "100%", height: "100%", objectFit: f.fit === "cover" ? "cover" : "contain", pointerEvents: "none" }} />
+                    ) : (
+                      <div className="text-[10px] text-muted-foreground tracking-widest">IMAGE</div>
+                    )
+                  ) : (
+                    <span style={{
+                      fontFamily: f.fontFamily, color: f.color, fontWeight: f.bold ? 700 : 400,
+                      fontSize: `calc(${f.fontSize / CANVAS_H} * 100cqh)`, whiteSpace: "nowrap", lineHeight: 1,
+                    }}>{currentRow[f.key] ?? `{${f.key}}`}</span>
+                  )}
                   {isSel && (
                     <div onPointerDown={(e) => startDrag(e, f.id, "resize")}
                       className="absolute -bottom-1 -right-1 w-3 h-3 bg-primary cursor-se-resize" />
