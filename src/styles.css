@@ -5,7 +5,7 @@
 @custom-variant dark (&:is(.dark *));
 
 /* Bank Gothic alternative: wide condensed sans (Saira Stencil for display, Oswald for headings, Inter for body) */
-@import url('https://fonts.googleapis.com/css2?family=Saira+Stencil+One&family=Oswald:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap'[...]);
+@import url('https://fonts.googleapis.com/css2?family=Saira+Stencil+One&family=Oswald:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 
 @theme inline {
   --radius-sm: calc(var(--radius) - 4px);
@@ -189,7 +189,7 @@
   position: absolute; inset: 0;
   pointer-events: none;
   opacity: 0.04;
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9'/></filter><r[...]);
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9'/></filter><rect width='120' height='120' filter='url(%23n)' opacity='.4'/></svg>");
 }
 
 /* Scrollbar */
