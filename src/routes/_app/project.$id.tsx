@@ -171,7 +171,7 @@ function ProjectEditor() {
       setBusy(`Generating ${i + 1} / ${rows.length}…`);
       const r = rows[i];
       const filenameBase = sanitizeFilename(r["Name"] ?? r[columns[0]] ?? `cert-${i + 1}`);
-      const pdf = await renderCertificatePdf(template, fields, r);
+      const pdf = await renderCertificatePdf(activeTemplate, fields, r);
       results.push({ name: `${filenameBase}.pdf`, pdf, row: r });
     }
     setBusy("");
@@ -194,7 +194,7 @@ function ProjectEditor() {
   const downloadOne = async () => {
     if (!rows.length) return toast.error("Upload data first");
     const r = rows[previewIdx];
-    const pdf = await renderCertificatePdf(template, fields, r);
+    const pdf = await renderCertificatePdf(activeTemplate, fields, r);
     const blob = new Blob([pdf as BlobPart], { type: "application/pdf" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
