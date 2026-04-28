@@ -35,8 +35,11 @@ function ProjectEditor() {
   const [selectedField, setSelectedField] = useState<string | null>(null);
   const [busy, setBusy] = useState<string>("");
   const stageRef = useRef<HTMLDivElement>(null);
+  const [customTemplate, setCustomTemplate] = useState<string | null>(null);
 
   const template = useMemo(() => TEMPLATES.find((t) => t.id === templateId) ?? TEMPLATES[0], [templateId]);
+  const activeTemplate = customTemplate ? { customImage: customTemplate } : template;
+  const previewBg = customTemplate ?? templateToDataUrl(template.svg);
   const currentRow = rows[previewIdx] ?? {};
   const selected = fields.find((f) => f.id === selectedField) ?? null;
 
