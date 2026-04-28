@@ -10,7 +10,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
 import JSZip from "jszip";
-import { Plus, Trash2, Upload, Download, Mail, ArrowLeft, Save } from "lucide-react";
+import { Plus, Trash2, Upload, Download, Mail, ArrowLeft, Save, Image as ImageIcon, Type } from "lucide-react";
+
+const fileToDataUrl = (file: File) => new Promise<string>((res, rej) => {
+  const r = new FileReader(); r.onload = () => res(String(r.result)); r.onerror = rej; r.readAsDataURL(file);
+});
 
 export const Route = createFileRoute("/_app/project/$id")({
   component: ProjectEditor,
@@ -31,8 +35,11 @@ function ProjectEditor() {
   const [selectedField, setSelectedField] = useState<string | null>(null);
   const [busy, setBusy] = useState<string>("");
   const stageRef = useRef<HTMLDivElement>(null);
+  const [customTemplate, setCustomTemplate] = useState<string | null>(null);
 
   const template = useMemo(() => TEMPLATES.find((t) => t.id === templateId) ?? TEMPLATES[0], [templateId]);
+  const activeTemplate = customTemplate ? { customImage: customTemplate } : template;
+  const previewBg = customTemplate ?? templateToDataUrl(template.svg);
   const currentRow = rows[previewIdx] ?? {};
   const selected = fields.find((f) => f.id === selectedField) ?? null;
 
@@ -43,8 +50,11 @@ function ProjectEditor() {
       setName(data.name);
       setTemplateId(data.template_id);
       setFields((data.fields as FieldDef[] | null) ?? []);
-      const last = data.last_data as { rows: Record<string, string>[]; columns: string[]; emailColumn?: string } | null;
-      if (last) { setRows(last.rows ?? []); setColumns(last.columns ?? []); setEmailColumn(last.emailColumn ?? ""); }
+      const last = data.last_data as { rows: Record<string, string>[]; columns: string[]; emailColumn?: string; customTemplate?: string | null } | null;
+      if (last) {
+        setRows(last.rows ?? []); setColumns(last.columns ?? []); setEmailColumn(last.emailColumn ?? "");
+        if (last.customTemplate) setCustomTemplate(last.customTemplate);
+      }
       setLoading(false);
     })();
   }, [id, navigate]);
@@ -54,7 +64,7 @@ function ProjectEditor() {
     const { error } = await supabase.from("projects").update({
       name, template_id: templateId,
       fields: fields as unknown as never,
-      last_data: (rows.length ? { rows, columns, emailColumn } : null) as unknown as never,
+      last_data: { rows, columns, emailColumn, customTemplate } as unknown as never,
     }).eq("id", id);
     setSaving(false);
     if (error) toast.error(error.message); else toast.success("Saved");
@@ -86,12 +96,35 @@ function ProjectEditor() {
   const addField = (key?: string) => {
     const k = key ?? columns[0] ?? "Name";
     const f: FieldDef = {
-      id: crypto.randomUUID(), key: k,
+      id: crypto.randomUUID(), type: "text", key: k,
       x: 0.15, y: 0.55, width: 0.7, height: 0.08,
       fontSize: 64, fontFamily: "'Saira Stencil One', sans-serif",
       color: "#1a1a1a", bold: false, align: "center",
     };
     setFields((p) => [...p, f]); setSelectedField(f.id);
+  };
+
+  const addImageField = async (file: File) => {
+    try {
+      const dataUrl = await fileToDataUrl(file);
+      const f: FieldDef = {
+        id: crypto.randomUUID(), type: "image", key: file.name,
+        x: 0.05, y: 0.05, width: 0.18, height: 0.12,
+        fontSize: 0, fontFamily: "Inter, sans-serif",
+        color: "#000000", bold: false, align: "center",
+        imageDataUrl: dataUrl, fit: "contain",
+      };
+      setFields((p) => [...p, f]); setSelectedField(f.id);
+      toast.success("Image added");
+    } catch { toast.error("Could not read image"); }
+  };
+
+  const handleTemplateUpload = async (file: File) => {
+    try {
+      const dataUrl = await fileToDataUrl(file);
+      setCustomTemplate(dataUrl);
+      toast.success("Custom template loaded");
+    } catch { toast.error("Could not read template"); }
   };
 
   const updateField = (id: string, patch: Partial<FieldDef>) =>
@@ -138,7 +171,7 @@ function ProjectEditor() {
       setBusy(`Generating ${i + 1} / ${rows.length}…`);
       const r = rows[i];
       const filenameBase = sanitizeFilename(r["Name"] ?? r[columns[0]] ?? `cert-${i + 1}`);
-      const pdf = await renderCertificatePdf(template, fields, r);
+      const pdf = await renderCertificatePdf(activeTemplate, fields, r);
       results.push({ name: `${filenameBase}.pdf`, pdf, row: r });
     }
     setBusy("");
@@ -161,7 +194,7 @@ function ProjectEditor() {
   const downloadOne = async () => {
     if (!rows.length) return toast.error("Upload data first");
     const r = rows[previewIdx];
-    const pdf = await renderCertificatePdf(template, fields, r);
+    const pdf = await renderCertificatePdf(activeTemplate, fields, r);
     const blob = new Blob([pdf as BlobPart], { type: "application/pdf" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -223,10 +256,23 @@ function ProjectEditor() {
         <aside className="col-span-3 space-y-6">
           <div className="border border-border bg-card p-4">
             <div className="text-[10px] tracking-[0.3em] text-gold mb-3">TEMPLATE</div>
-            <Select value={templateId} onValueChange={setTemplateId}>
-              <SelectTrigger className="bg-input border-border"><SelectValue /></SelectTrigger>
+            <Select value={templateId} onValueChange={(v) => { setTemplateId(v); setCustomTemplate(null); }}>
+              <SelectTrigger className="bg-input border-border" disabled={!!customTemplate}><SelectValue /></SelectTrigger>
               <SelectContent>{TEMPLATES.map((t) => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}</SelectContent>
             </Select>
+            <label className="block mt-3">
+              <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && handleTemplateUpload(e.target.files[0])} />
+              <div className="border border-dashed border-border p-3 text-center cursor-pointer hover:border-gold transition-colors">
+                <Upload className="h-4 w-4 mx-auto mb-1 text-muted-foreground" />
+                <div className="text-[10px] tracking-widest text-muted-foreground">UPLOAD CUSTOM TEMPLATE</div>
+              </div>
+            </label>
+            {customTemplate && (
+              <div className="mt-2 flex items-center justify-between text-[10px] tracking-widest text-gold">
+                <span>CUSTOM IMAGE ACTIVE</span>
+                <button onClick={() => setCustomTemplate(null)} className="underline hover:text-foreground">CLEAR</button>
+              </div>
+            )}
           </div>
 
           <div className="border border-border bg-card p-4">
@@ -262,16 +308,26 @@ function ProjectEditor() {
           <div className="border border-border bg-card p-4">
             <div className="flex items-center justify-between mb-3">
               <div className="text-[10px] tracking-[0.3em] text-gold">FIELDS</div>
-              <Button onClick={() => addField()} size="sm" variant="ghost" className="h-7 px-2"><Plus className="h-3.5 w-3.5" /></Button>
+              <div className="flex items-center gap-1">
+                <Button onClick={() => addField()} size="sm" variant="ghost" className="h-7 px-2" title="Add text field"><Type className="h-3.5 w-3.5" /></Button>
+                <label title="Add image / logo">
+                  <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && addImageField(e.target.files[0])} />
+                  <span className="inline-flex h-7 px-2 items-center justify-center rounded-md hover:bg-secondary cursor-pointer"><ImageIcon className="h-3.5 w-3.5" /></span>
+                </label>
+                <Button onClick={() => addField()} size="sm" variant="ghost" className="h-7 px-2" title="Add field"><Plus className="h-3.5 w-3.5" /></Button>
+              </div>
             </div>
             {fields.length === 0 ? (
-              <div className="text-xs text-muted-foreground">No fields yet. Upload data, then add fields.</div>
+              <div className="text-xs text-muted-foreground">No fields yet. Add text from data, or upload an image / logo.</div>
             ) : (
               <div className="space-y-1">
                 {fields.map((f) => (
                   <div key={f.id} onClick={() => setSelectedField(f.id)}
                     className={`flex items-center justify-between px-2 py-1.5 cursor-pointer text-xs tracking-widest border ${selectedField === f.id ? "border-gold bg-secondary" : "border-transparent hover:border-border"}`}>
-                    <span>{f.key}</span>
+                    <span className="flex items-center gap-1.5 truncate">
+                      {f.type === "image" ? <ImageIcon className="h-3 w-3 text-gold" /> : <Type className="h-3 w-3 text-muted-foreground" />}
+                      <span className="truncate">{f.key}</span>
+                    </span>
                     <button onClick={(e) => { e.stopPropagation(); removeField(f.id); }}><Trash2 className="h-3 w-3 text-muted-foreground hover:text-destructive" /></button>
                   </div>
                 ))}
@@ -285,10 +341,10 @@ function ProjectEditor() {
           <div ref={stageRef} onClick={() => setSelectedField(null)}
             className="relative bg-white border border-border shadow-2xl select-none"
             style={{ aspectRatio: `${CANVAS_W} / ${CANVAS_H}` }}>
-            <img src={templateToDataUrl(template.svg)} alt="" className="absolute inset-0 w-full h-full pointer-events-none" />
+            <img src={previewBg} alt="" className="absolute inset-0 w-full h-full pointer-events-none object-fill" />
             {fields.map((f) => {
-              const text = currentRow[f.key] ?? `{${f.key}}`;
               const isSel = f.id === selectedField;
+              const isImage = f.type === "image";
               return (
                 <div key={f.id}
                   onPointerDown={(e) => { setSelectedField(f.id); startDrag(e, f.id, "move"); }}
@@ -299,10 +355,19 @@ function ProjectEditor() {
                     display: "flex", alignItems: "center",
                     justifyContent: f.align === "center" ? "center" : f.align === "right" ? "flex-end" : "flex-start",
                   }}>
-                  <span style={{
-                    fontFamily: f.fontFamily, color: f.color, fontWeight: f.bold ? 700 : 400,
-                    fontSize: `calc(${f.fontSize / CANVAS_H} * 100cqh)`, whiteSpace: "nowrap", lineHeight: 1,
-                  }}>{text}</span>
+                  {isImage ? (
+                    f.imageDataUrl ? (
+                      <img src={f.imageDataUrl} alt="" draggable={false}
+                        style={{ width: "100%", height: "100%", objectFit: f.fit === "cover" ? "cover" : "contain", pointerEvents: "none" }} />
+                    ) : (
+                      <div className="text-[10px] text-muted-foreground tracking-widest">IMAGE</div>
+                    )
+                  ) : (
+                    <span style={{
+                      fontFamily: f.fontFamily, color: f.color, fontWeight: f.bold ? 700 : 400,
+                      fontSize: `calc(${f.fontSize / CANVAS_H} * 100cqh)`, whiteSpace: "nowrap", lineHeight: 1,
+                    }}>{currentRow[f.key] ?? `{${f.key}}`}</span>
+                  )}
                   {isSel && (
                     <div onPointerDown={(e) => startDrag(e, f.id, "resize")}
                       className="absolute -bottom-1 -right-1 w-3 h-3 bg-primary cursor-se-resize" />
@@ -322,6 +387,42 @@ function ProjectEditor() {
             <div className="text-[10px] tracking-[0.3em] text-gold mb-4">PROPERTIES</div>
             {!selected ? (
               <p className="text-xs text-muted-foreground">Select a field to edit its style.</p>
+            ) : selected.type === "image" ? (
+              <div className="space-y-4">
+                <div className="text-[10px] tracking-[0.3em] text-gold">IMAGE / LOGO</div>
+                {selected.imageDataUrl && (
+                  <div className="border border-border bg-secondary/30 p-2 grid place-items-center">
+                    <img src={selected.imageDataUrl} alt="" className="max-h-24 object-contain" />
+                  </div>
+                )}
+                <label className="block">
+                  <input type="file" accept="image/*" className="hidden"
+                    onChange={async (e) => {
+                      const f = e.target.files?.[0]; if (!f) return;
+                      const url = await fileToDataUrl(f);
+                      updateField(selected.id, { imageDataUrl: url, key: f.name });
+                    }} />
+                  <div className="border border-dashed border-border p-3 text-center cursor-pointer hover:border-gold text-[10px] tracking-widest text-muted-foreground">
+                    REPLACE IMAGE
+                  </div>
+                </label>
+                <div>
+                  <Label className="text-[10px] tracking-widest text-muted-foreground">FIT</Label>
+                  <div className="grid grid-cols-2 gap-1 mt-1">
+                    {(["contain", "cover"] as const).map((m) => (
+                      <button key={m} onClick={() => updateField(selected.id, { fit: m })}
+                        className={`text-xs tracking-widest py-2 border ${(selected.fit ?? "contain") === m ? "border-primary bg-primary text-primary-foreground" : "border-border"}`}>
+                        {m.toUpperCase()}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="hairline" />
+                <div className="text-[10px] text-muted-foreground tracking-widest">
+                  X {(selected.x * 100).toFixed(1)}% · Y {(selected.y * 100).toFixed(1)}%<br />
+                  W {(selected.width * 100).toFixed(1)}% · H {(selected.height * 100).toFixed(1)}%
+                </div>
+              </div>
             ) : (
               <div className="space-y-4">
                 <div>
